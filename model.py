@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
 
@@ -53,8 +51,6 @@ def pred_best_vals(culture):
 def get_products_needed(client_vals, culture, area):
     best = pred_best_vals(culture)
     sugestions = []
-    print(best[0])
-    print(client_vals[0])
 
     if (client_vals[0]<best[0] and client_vals[1]<best[1] and client_vals[2]<best[2]):
         quantity = 200*area
@@ -105,15 +101,6 @@ def get_products_needed(client_vals, culture, area):
     
     print(sugestions)
     return sugestions
-
-
-
-def plot(t):
-    df = get_data()
-    # oriented to horizontal
-    sns.stripplot(y="label", x=t, hue="label",
-                  orient="h", data=df, size=5)
-    plt.show()
 
 
 def detect_outliers(row_index):
