@@ -7,6 +7,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.multioutput import MultiOutputRegressor
+from sklearn.neighbors import LocalOutlierFactor
+
+from sklearn.impute import SimpleImputer
 
 
 def get_data():
@@ -18,11 +21,10 @@ def pred_best_vals(culture):
     df = get_data()
     X = df[['label']]
     y = df[['N', 'P', 'K', 'ph']]
-    print(y)
 
     onehot_encoder = OneHotEncoder(categories='auto', sparse=False)
 
-    # Define a column transformer to apply the one-hot encoder to the 'color' column
+    # Define a column transformer to apply the one-hot encoder to the 'lable' column
     preprocessor = ColumnTransformer(
         transformers=[('onehot', onehot_encoder, ['label'])],
         remainder='passthrough')
@@ -42,10 +44,38 @@ def pred_best_vals(culture):
         pd.DataFrame(new_data, columns=X.columns))
     predictions = multioutput.predict(encoded_data)
 
-    print(predictions)
+    return predictions[0]
 
 
-pred_best_vals("maize")
+
+
+
+def get_products_needed(client_vals, culture, area):
+    best = pred_best_vals(culture)
+    sugestions = []
+    print(best[0])
+    print(client_vals[0])
+
+    if (client_vals[0]<best[0] and client_vals[1]<best[1] and client_vals[2]<best[2]):
+        quantity = 200*area
+        sugestions += [("Biopron", quantity, "Kg")]
+
+    elif(client_vals[0] < best[0] and client_vals[2] < best[2]):
+        quantity = 5*area
+        sugestions += [("Vitasoil", quantity, "L")]
+
+    else:
+        if (client_vals[1] < best[1]):
+            quantity = 6*area
+            sugestions += [("Kipant AllGrip", quantity, "L")]
+
+        if (client_vals[0] < best[0]):
+            quantity = 6*area
+            sugestions += [("Kiplant iNmass", quantity, "L")]
+    
+    print(sugestions)
+    return sugestions
+
 
 
 def plot(t):
@@ -54,3 +84,82 @@ def plot(t):
     sns.stripplot(y="label", x=t, hue="label",
                   orient="h", data=df, size=5)
     plt.show()
+
+
+def detect_outliers(row_index):
+    # Load the data into a DataFrame
+    df = get_data()
+    cat_col = 'label'
+
+    onehot_encoder = OneHotEncoder(categories='auto', sparse=False)
+    one_hot_data = onehot_encoder.fit_transform(df[['label']])
+
+    # Define a column transformer to apply the one-hot encoder to the 'color' column
+    preprocessor = ColumnTransformer(
+        transformers=[('onehot', onehot_encoder, ['label'])],
+        remainder='passthrough')
+
+    # Convert the one-hot encoded data to a DataFrame
+
+    one_hot_cols = [
+        f'{cat_col}_{val}' for val in onehot_encoder.categories_[0]]
+    one_hot_df = pd.DataFrame(one_hot_data, columns=one_hot_cols)
+
+    df = pd.concat([df.drop(columns=[cat_col]), one_hot_df], axis=1)
+
+    # Select the row to analyze
+    row = df.loc[row_index]
+
+    # Define the imputer transformer
+    imputer = SimpleImputer(strategy='mean')
+
+    # Fit the imputer on the data
+    imputer.fit(df)
+
+    # Fill in the missing values in the DataFrame
+    df = pd.DataFrame(imputer.transform(df), columns=df.columns)
+
+    # Define the local outlier factor model
+    model = LocalOutlierFactor(
+        n_neighbors=20, contamination=0.05, novelty=False)
+
+    # Fit the model on the data
+    scores = model.fit_predict(df)
+
+    # Get the anomaly score of the row
+    original_score = scores[row_index]
+
+    # Get the scores of all rows that are not the analyzed row
+    other_scores = scores[scores != original_score]
+
+    # Get the median score of the other rows
+    median_score = np.median(other_scores)
+
+    # Get the difference between the original score and the median score
+    score_diff = original_score - median_score
+
+    # Get the columns that contribute to the score difference
+    culprit_cols = set()
+    for col in df.columns:
+        # Create a copy of the dataframe with the analyzed row removed
+        no_row_df = df.drop(index=row_index)
+        # Create a copy of the dataframe with the analyzed row's value in the current column changed
+        new_row_df = no_row_df.copy()
+        new_row_df.loc[row_index, col] = row[col] + 1
+        # Calculate the scores for both dataframes
+        no_row_scores = model.fit_predict(no_row_df)
+        new_row_scores = model.fit_predict(new_row_df)
+        # Get the difference between the two scores
+        col_score_diff = new_row_scores[row_index] - no_row_scores[row_index]
+        # If the difference is greater than the score difference, the column is a culprit
+        if col_score_diff > score_diff:
+            culprit_cols.add(col)
+
+    if len(culprit_cols) > 0:
+        print(
+            f"The row contains outliers in columns: {', '.join(culprit_cols)}")
+    else:
+        print("The row does not contain outliers.")
+
+
+#detect_outliers(0)
