@@ -9,6 +9,9 @@ from sklearn.neighbors import LocalOutlierFactor
 
 from sklearn.impute import SimpleImputer
 
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+
 
 def get_data():
     df = pd.read_csv('Crop_recommendation.csv')
@@ -123,7 +126,6 @@ def get_products_needed(client_vals, culture, area):
             sugestions += [products]
 
 
-    print(sugestions)
     return sugestions
 
 
@@ -206,4 +208,41 @@ def detect_outliers(row_index):
 # detect_outliers(0)
 
 
-get_products_needed([1, 2, 90], "rice", 3)
+#get_products_needed([1, 2, 90], "rice", 3)
+
+
+
+
+def get_accuracy():
+    df = get_data()
+    # Load the dataset
+
+    # Split the data into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(
+        df[['label']], df[['N', 'P', 'K', 'ph']], test_size=0.2, random_state=42)
+
+    # Define a column transformer to apply the one-hot encoder to the 'label' column
+    onehot_encoder = OneHotEncoder(categories='auto', sparse=False)
+    preprocessor = ColumnTransformer(
+        transformers=[('onehot', onehot_encoder, ['label'])],
+        remainder='passthrough')
+
+    # Define a regression model to use for each output column
+    estimator = RandomForestRegressor()
+
+    # Create a multi-output regression model using the defined estimator and preprocessor
+    multioutput = MultiOutputRegressor(estimator)
+
+    # Train the model on the training set
+    multioutput.fit(preprocessor.fit_transform(X_train), y_train)
+
+    # Use the model to predict the output values for the test set
+    y_pred = multioutput.predict(preprocessor.transform(X_test))
+
+    # Calculate the R-squared score to evaluate the model's performance
+    accuracy = r2_score(y_test, y_pred)
+
+    print('Model accuracy: {:.2f}'.format(accuracy))
+
+
+get_accuracy()
