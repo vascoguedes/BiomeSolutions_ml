@@ -58,20 +58,50 @@ def get_products_needed(client_vals, culture, area):
 
     if (client_vals[0]<best[0] and client_vals[1]<best[1] and client_vals[2]<best[2]):
         quantity = 200*area
-        sugestions += [("Biopron", quantity, "Kg")]
+        q=quantity
+        packets = []
+        if(quantity//500>0):
+            packets +=[(quantity//500, 500)]
+            quantity -= 500*(quantity//500)
+        if(quantity//25>0):
+            packets +=[(quantity//25, 25)]
+            quantity -= 25*(quantity//25)
+        if (quantity//10 > 0):
+            packets += [(quantity//10, 10)]
+            quantity -= 10*(quantity//10)
+        if (quantity//1 > 0):
+            packets += [(quantity//1, 1)]
+            quantity -= 1*(quantity//1)
+        
+        sugestions += [("Biopron", q, "Kg", packets, "https://probelte.com/wp-content/uploads/2022/02/Probelte_Product_catalogue.pdf")]
 
     elif(client_vals[0] < best[0] and client_vals[2] < best[2]):
         quantity = 5*area
-        sugestions += [("Vitasoil", quantity, "L")]
+        q = quantity//20
+        if q*20<quantity:
+            q+=1
+        packets = [(q,20)]
+        sugestions += [("Vitasoil", quantity, "L", packets,
+                        "https://symborg.com/pt/biofertilizantes/vitasoil/")]
 
     else:
         if (client_vals[1] < best[1]):
             quantity = 6*area
-            sugestions += [("Kipant AllGrip", quantity, "L")]
+            q = quantity//10
+            if q*10<quantity:
+                q+=1
+            packets = [(q,10)]
+            sugestions += [("Kipant AllGrip", quantity, "L",
+                            "https://www.asfertglobal.com/produtos/kiplant-allgrip-pt/")]
 
         if (client_vals[0] < best[0]):
             quantity = 6*area
-            sugestions += [("Kiplant iNmass", quantity, "L")]
+            q = quantity//10
+            if q*10 < quantity:
+                q += 1
+            packets = [(q, 10)]
+            sugestions += [("Kiplant iNmass", quantity, "L",
+                            "https://www.asfertglobal.com/produtos/kiplant-inmass-pt/")]
     
     print(sugestions)
     return sugestions
