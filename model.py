@@ -45,60 +45,84 @@ def pred_best_vals(culture):
     return predictions[0]
 
 
-
-
-
 def get_products_needed(client_vals, culture, area):
     best = pred_best_vals(culture)
+    res = {"predictions": best}
+
+    products = {}
+
     sugestions = []
 
-    if (client_vals[0]<best[0] and client_vals[1]<best[1] and client_vals[2]<best[2]):
+    if (client_vals[0] < best[0] and client_vals[1] < best[1] and client_vals[2] < best[2]):
         quantity = 200*area
-        q=quantity
-        packets = []
-        if(quantity//500>0):
-            packets +=[(quantity//500, 500)]
+        q = quantity
+        toBuy = []
+        if (quantity//500 > 0):
+            toBuy += [{"quantity": quantity//500, "size": 500}]
             quantity -= 500*(quantity//500)
-        if(quantity//25>0):
-            packets +=[(quantity//25, 25)]
+        if (quantity//25 > 0):
+            toBuy += [{"quantity": quantity//25, "size": 25}]
             quantity -= 25*(quantity//25)
         if (quantity//10 > 0):
-            packets += [(quantity//10, 10)]
+            toBuy += [{"quantity": quantity//10, "size": 10}]
             quantity -= 10*(quantity//10)
         if (quantity//1 > 0):
-            packets += [(quantity//1, 1)]
+            toBuy += [{"quantity": quantity//1, "size": 1}]
             quantity -= 1*(quantity//1)
-        
-        sugestions += [("Biopron", q, "Kg", packets, "https://probelte.com/wp-content/uploads/2022/02/Probelte_Product_catalogue.pdf")]
+        #sugestions += [("Biopron", q, "Kg", packets, "https://probelte.com/wp-content/uploads/2022/02/Probelte_Product_catalogue.pdf")]
+        products['name'] = "Biopron"
+        products['quantity'] = q
+        products['unity'] = "Kg"
+        products['link'] = "https://probelte.com/wp-content/uploads/2022/02/Probelte_Product_catalogue.pdf"
+        products['toBuy'] = toBuy
 
-    elif(client_vals[0] < best[0] and client_vals[2] < best[2]):
+        sugestions += [products]
+
+    elif (client_vals[0] < best[0] and client_vals[2] < best[2]):
+        toBuy = []
         quantity = 5*area
         q = quantity//20
-        if q*20<quantity:
-            q+=1
-        packets = [(q,20)]
-        sugestions += [("Vitasoil", quantity, "L", packets,
-                        "https://symborg.com/pt/biofertilizantes/vitasoil/")]
+        if q*20 < quantity:
+            q += 1
+        toBuy += [{"quantity": q, "size": 20}]
+        products['name'] = "Vitasoil"
+        products['quantity'] = quantity
+        products['unity'] = "L"
+        products['link'] = "https://symborg.com/pt/biofertilizantes/vitasoil/"
+        products['toBuy'] = toBuy
+        sugestions += [products]
+
 
     else:
         if (client_vals[1] < best[1]):
-            quantity = 6*area
-            q = quantity//10
-            if q*10<quantity:
-                q+=1
-            packets = [(q,10)]
-            sugestions += [("Kipant AllGrip", quantity, "L",
-                            "https://www.asfertglobal.com/produtos/kiplant-allgrip-pt/")]
-
-        if (client_vals[0] < best[0]):
+            toBuy = []
             quantity = 6*area
             q = quantity//10
             if q*10 < quantity:
                 q += 1
-            packets = [(q, 10)]
-            sugestions += [("Kiplant iNmass", quantity, "L",
-                            "https://www.asfertglobal.com/produtos/kiplant-inmass-pt/")]
-    
+            toBuy += [{"quantity": q, "size": 10}]
+            products['name'] = "Kipant AllGrip"
+            products['quantity'] = quantity
+            products['unity'] = "L"
+            products['link'] = "https://www.asfertglobal.com/produtos/kiplant-allgrip-pt/"
+            products['toBuy'] = toBuy
+            sugestions += [products]
+
+        if (client_vals[0] < best[0]):
+            toBuy = []
+            quantity = 6*area
+            q = quantity//10
+            if q*10 < quantity:
+                q += 1
+            toBuy += [{"quantity": q, "size": 10}]
+            products['name'] = "Kiplant iNmass"
+            products['quantity'] = quantity
+            products['unity'] = "L"
+            products['link'] = "https://www.asfertglobal.com/produtos/kiplant-inmass-pt/"
+            products['toBuy'] = toBuy
+            sugestions += [products]
+
+
     print(sugestions)
     return sugestions
 
@@ -179,4 +203,7 @@ def detect_outliers(row_index):
         print("The row does not contain outliers.")
 
 
-#detect_outliers(0)
+# detect_outliers(0)
+
+
+get_products_needed([1, 2, 90], "rice", 3)
